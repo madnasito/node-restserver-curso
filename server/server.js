@@ -7,6 +7,17 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json())
+const mongoose = require('mongoose');
+
+
+mongoose.connect(process.env.urlDB, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true }, (err) => {
+    if (err) {
+        console.log(err);
+    }
+
+    console.log('Base de datos', 'Online'.green);
+
+});
 app.use(require('./routes/usuario'));
 
 app.listen(process.env.PORT, () => {
