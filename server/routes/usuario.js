@@ -3,8 +3,9 @@ const app = express();
 const Usuario = require('../models/usuario')
 const bcrypt = require('bcrypt');
 const _ = require("underscore");
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
 
-app.get('/usuario', (req, res) => {
+app.get('/usuario', verificaToken, (req, res) => {
 
     let limit = req.query.limit || 5;
     let skip = req.query.skip || 0;
@@ -22,7 +23,7 @@ app.get('/usuario', (req, res) => {
                 })
             }
 
-            Usuario.count({}, (err, conteo) => {
+            Usuario.countDocuments({}, (err, conteo) => {
                 res.json({
                     ok: true,
                     usuarios,
@@ -34,7 +35,7 @@ app.get('/usuario', (req, res) => {
 
 })
 
-app.post('/usuario', (req, res) => {
+app.post('/usuario', [verificaToken, verificaAdmin_Role], (req, res) => {
     let body = req.body;
     let usuario = new Usuario({
         nombre: body.nombre,
@@ -58,14 +59,14 @@ app.post('/usuario', (req, res) => {
 
 })
 
-app.put('/usuario/:id', (req, res) => {
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
     let id = req.params.id;
     let body = _.pick(req.body, ['nombre', 'role', 'email', 'img', 'estado']);
 
     Usuario.findOneAndUpdate(id, body, { new: true, runValidators: true }, (err, usuarioDB) => {
 
         if (err) {
-            res.status(400).json({
+            return res.status(400).json({
                 ok: false,
                 err
             })
@@ -78,7 +79,7 @@ app.put('/usuario/:id', (req, res) => {
     })
 })
 
-app.delete('/usuario/:id', (req, res) => {
+app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
     let id = req.params.id;
     let actualizaEstado = {
         estado: false

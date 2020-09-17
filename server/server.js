@@ -18,7 +18,7 @@ mongoose.connect(process.env.urlDB, { useNewUrlParser: true, useUnifiedTopology:
     console.log('Base de datos', 'Online'.green);
 
 });
-app.use(require('./routes/usuario'));
+app.use(require('./routes/index'));
 
 app.listen(process.env.PORT, () => {
     console.log('Escuchando el puerto:', process.env.PORT.rainbow);
