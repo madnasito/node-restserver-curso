@@ -8,14 +8,14 @@ app.post('/login', (req, res) => {
 
     let body = req.body;
 
-    Usuario.findOne({ email: body.email }, (err, usuadioDB) => {
+    Usuario.findOne({ email: body.email }, (err, usuarioDB) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
                 err
             })
         }
-        if (!usuadioDB) {
+        if (!usuarioDB) {
             res.status(400).json({
                 ok: false,
                 err: {
@@ -24,7 +24,7 @@ app.post('/login', (req, res) => {
             })
         }
 
-        if (!bcrypt.compareSync(body.password, usuadioDB.password)) {
+        if (!bcrypt.compareSync(body.password, usuarioDB.password)) {
             res.status(400).json({
                 ok: false,
                 err: {
@@ -34,12 +34,12 @@ app.post('/login', (req, res) => {
         }
 
         let token = jwt.sign({
-            usuadio: usuadioDB
+            usuario: usuarioDB
         }, process.env.SEED, { expiresIn: process.env.CADUCIDAD_TOKEN });
 
         res.json({
             ok: true,
-            usario: usuadioDB,
+            usario: usuarioDB,
             token
         })
     })
