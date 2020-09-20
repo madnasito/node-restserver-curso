@@ -2,37 +2,41 @@ const express = require('express');
 const app = express();
 const Usuario = require('../models/usuario')
 const bcrypt = require('bcrypt');
-const _ = require("underscore");
-const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
+const _ = require('underscore');
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion')
 
 app.get('/usuario', verificaToken, (req, res) => {
-
     let limit = req.query.limit || 5;
     let skip = req.query.skip || 0;
+
     limit = Number(limit);
     skip = Number(skip);
 
-    Usuario.find({}, 'nombre email role estado google img')
+    Usuario.find({})
         .skip(skip)
         .limit(limit)
         .exec((err, usuarios) => {
             if (err) {
-                res.status(400).json({
-                    ok: false,
+                return res.status(400).json({
+                    ok: true,
                     err
                 })
             }
 
-            Usuario.countDocuments({}, (err, conteo) => {
+            Usuario.countDocuments((err, conteo) => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: true,
+                        err
+                    })
+                }
                 res.json({
                     ok: true,
                     usuarios,
-                    conteo
+                    Total: conteo
                 })
             })
-
         })
-
 })
 
 app.post('/usuario', [verificaToken, verificaAdmin_Role], (req, res) => {
@@ -43,10 +47,27 @@ app.post('/usuario', [verificaToken, verificaAdmin_Role], (req, res) => {
         password: bcrypt.hashSync(body.password, 10),
         role: body.role
     })
-
     usuario.save((err, usuarioDB) => {
         if (err) {
-            res.status(400).json({
+            return res.status(400).json({
+                ok: true,
+                err
+            })
+        }
+        res.json({
+            ok: true,
+            usuario: usuarioDB
+        })
+    })
+})
+
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
+    let body = _.pick(req.body, ['nombre', 'role', 'img', 'email']);
+    let id = req.params.id;
+
+    Usuario.findByIdAndUpdate(id, body, { new: true, runValidators: true }, (err, usuarioDB) => {
+        if (err) {
+            return res.status(400).json({
                 ok: false,
                 err
             })
@@ -56,47 +77,27 @@ app.post('/usuario', [verificaToken, verificaAdmin_Role], (req, res) => {
             usuarioDB
         })
     })
-
-})
-
-app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
-    let id = req.params.id;
-    let body = _.pick(req.body, ['nombre', 'role', 'email', 'img', 'estado']);
-
-    Usuario.findOneAndUpdate(id, body, { new: true, runValidators: true }, (err, usuarioDB) => {
-
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            })
-        }
-
-        res.json({
-            ok: true,
-            usuario: usuarioDB
-        })
-    })
 })
 
 app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
     let id = req.params.id;
-    let actualizaEstado = {
+    let cambiaEstado = {
         estado: false
     }
 
-    Usuario.findByIdAndUpdate(id, actualizaEstado, { new: true, runValidators: true }, (err, usuarioBorrado) => {
+    Usuario.findOneAndUpdate(id, cambiaEstado, { new: true, runValidators: true }, (err, usuarioBorrado) => {
         if (err) {
-            res.status(400).json({
+            return res.status(400).json({
                 ok: false,
                 err
             })
         }
+
         if (!usuarioBorrado) {
             return res.status(400).json({
                 ok: false,
                 err: {
-                    message: 'No se pudo encontrar el usuario'
+                    message: 'No es ha encontrado el usuario'
                 }
             })
         }
@@ -105,7 +106,6 @@ app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], (req, res) => {
             ok: true,
             usuarioBorrado
         })
-
     })
 })
 
